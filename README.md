@@ -312,7 +312,7 @@ Run the notebooks in this order from the `notebooks/` folder:
 1. **Patient-wise splitting matters.** Splitting by patient rather than by encounter prevents data leakage and gives a more honest estimate of performance on new patients.
 2. **Accuracy is not the right metric** for this imbalanced problem; precision, recall, F1 and ROC-AUC give a fuller picture.
 3. **Threshold tuning** improved the balance between precision and recall compared with the default 0.5 cut-off.
-4. **Prior inpatient history and discharge destination** are the most informative signals for readmission risk.
+4. **Prior inpatient history and discharge destination** a>>>>>>> dc973b7 (Improve hospital readmission prediction models)re the most informative signals for readmission risk.
 5. **Model choice depends on the goal:** XGBoost for the best overall balance, Logistic Regression if catching as many readmissions as possible is the priority.
 
 ---
@@ -346,5 +346,3 @@ Run the notebooks in this order from the `notebooks/` folder:
 
 - Strack, B. et al. (2014). *Impact of HbA1c Measurement on Hospital Readmission Rates: Analysis of 70,000 Clinical Database Patient Records.* BioMed Research International.
 - UCI Machine Learning Repository: [Diabetes 130-US Hospitals for Years 1999–2008](https://archive.ics.uci.edu/dataset/296/diabetes+130-us+hospitals+for+years+1999-2008)
-
-

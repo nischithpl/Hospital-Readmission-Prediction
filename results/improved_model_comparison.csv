@@ -1,0 +1,5 @@
+Model,Optimal Threshold,Accuracy,Precision,Recall,F1 Score,ROC-AUC,PR-AUC,F1 (Default 0.5),Recall (Default 0.5),Training Time (s)
+Logistic Regression,0.54,0.7276,0.189,0.4714,0.2698,0.669,0.204,0.2648,0.5718,2.54
+Decision Tree,0.5755,0.7554,0.185,0.3794,0.2487,0.6476,0.1813,0.248,0.5844,1.42
+Random Forest,0.4714,0.7217,0.1844,0.4695,0.2648,0.6687,0.201,0.2662,0.3863,4.64
+XGBoost,0.548,0.7495,0.1971,0.4384,0.272,0.6757,0.2123,0.269,0.5839,2.16

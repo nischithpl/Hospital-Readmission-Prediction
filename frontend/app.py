@@ -503,7 +503,7 @@ if page == "Hospital Overview":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
         with col2:
@@ -533,7 +533,7 @@ if page == "Hospital Overview":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
 
@@ -559,7 +559,7 @@ if page == "Hospital Overview":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
         with col2:
@@ -586,7 +586,7 @@ if page == "Hospital Overview":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
 
@@ -634,7 +634,7 @@ elif page == "Patient Analytics":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
         with col2:
@@ -658,7 +658,7 @@ elif page == "Patient Analytics":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
 
@@ -684,7 +684,7 @@ elif page == "Patient Analytics":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
         with col2:
@@ -707,7 +707,7 @@ elif page == "Patient Analytics":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
 
@@ -732,7 +732,7 @@ elif page == "Patient Analytics":
 
         st.plotly_chart(
             chart_theme(fig),
-            use_container_width=True
+            width="stretch"
         )
 
 
@@ -777,7 +777,7 @@ elif page == "Admission Analytics":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
         with col2:
@@ -803,7 +803,7 @@ elif page == "Admission Analytics":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
 
@@ -823,7 +823,7 @@ elif page == "Admission Analytics":
 
         st.plotly_chart(
             chart_theme(fig),
-            use_container_width=True
+            width="stretch"
         )
 
 
@@ -839,7 +839,7 @@ elif page == "Admission Analytics":
 
         st.plotly_chart(
             chart_theme(fig),
-            use_container_width=True
+            width="stretch"
         )
 
 
@@ -861,7 +861,7 @@ elif page == "Admission Analytics":
 
         st.plotly_chart(
             chart_theme(fig),
-            use_container_width=True
+            width="stretch"
         )
 
 
@@ -911,7 +911,7 @@ elif page == "Diagnosis Analytics":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
         with col2:
@@ -941,7 +941,7 @@ elif page == "Diagnosis Analytics":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
 
@@ -985,7 +985,7 @@ elif page == "Diagnosis Analytics":
 
         st.plotly_chart(
             chart_theme(fig),
-            use_container_width=True
+            width="stretch"
         )
 
 
@@ -1033,7 +1033,7 @@ elif page == "Diagnosis Analytics":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
 
@@ -1083,7 +1083,7 @@ elif page == "Correlation Analysis":
 
         st.plotly_chart(
             chart_theme(fig),
-            use_container_width=True
+            width="stretch"
         )
 
 
@@ -1106,7 +1106,7 @@ elif page == "Correlation Analysis":
 
         st.plotly_chart(
             chart_theme(fig),
-            use_container_width=True
+            width="stretch"
         )
 
 
@@ -1140,7 +1140,7 @@ elif page == "Model Comparison":
             "F1 Score": "{:.4f}",
             "ROC-AUC": "{:.4f}"
         }),
-        use_container_width=True,
+        width="stretch",
         hide_index=True
     )
 
@@ -1170,7 +1170,7 @@ elif page == "Model Comparison":
 
     st.plotly_chart(
         chart_theme(fig),
-        use_container_width=True
+        width="stretch"
     )
 
 
@@ -1196,7 +1196,7 @@ elif page == "Model Comparison":
 
     st.plotly_chart(
         chart_theme(fig),
-        use_container_width=True
+        width="stretch"
     )
 
 
@@ -1249,7 +1249,7 @@ elif page == "Model Comparison":
         roc_fig.update_layout(xaxis_title="False Positive Rate", yaxis_title="True Positive Rate",
                               xaxis=dict(range=[0, 1]), yaxis=dict(range=[0, 1]),
                               legend=dict(orientation="h", y=-0.2))
-        st.plotly_chart(chart_theme(roc_fig), use_container_width=True)
+        st.plotly_chart(chart_theme(roc_fig), width="stretch")
     else:
         st.info("ROC curve data has not been saved yet. Add the short notebook cell provided with this updated app to create models/roc_curves.pkl. The existing ROC-AUC scores above are unchanged.")
 
@@ -1289,7 +1289,7 @@ elif page == "Model Evaluation":
 
     st.plotly_chart(
         chart_theme(fig),
-        use_container_width=True
+        width="stretch"
     )
 
     tn, fp, fn, tp = cm.ravel()
@@ -1341,7 +1341,7 @@ elif page == "Model Evaluation":
         st.image(
             roc_path,
             caption="ROC Curve Comparison of Three ML Models",
-            use_container_width=True
+            width="stretch"
         )
     else:
         st.warning("ROC curve image not found.")
@@ -1404,14 +1404,14 @@ elif page == "Feature Importance":
 
             st.plotly_chart(
                 chart_theme(fig),
-                use_container_width=True
+                width="stretch"
             )
 
             st.markdown("### Top 20 Important Features")
 
             st.dataframe(
                 feature_df,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True
             )
 
@@ -1652,7 +1652,7 @@ elif page == "Patient Assessment":
 
         submit = st.form_submit_button(
             "Generate Prediction",
-            use_container_width=True
+            width="stretch"
         )
 
 
@@ -1849,7 +1849,7 @@ elif page == "Prediction Results":
         fig.update_layout(showlegend=False, xaxis_title="Score (%)", yaxis_title="")
         st.plotly_chart(
             chart_theme(fig),
-            use_container_width=True
+            width="stretch"
         )
 
         st.caption(
