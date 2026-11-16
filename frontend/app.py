@@ -2084,24 +2084,32 @@ elif page == "Improved Patient Assessment":
 
         st.subheader("Enter Patient Information")
 
+        # imp_features are the engineered columns the preprocessor expects.
+        # Build the form directly from that list so the DataFrame matches exactly.
         with st.form("imp_patient_form"):
             cols = st.columns(3)
             patient_data = {}
-            all_fields = imp_num_cols + imp_cat_cols
-            for i, feat in enumerate(all_fields):
+            for i, feat in enumerate(imp_features):
                 col = cols[i % 3]
                 default = imp_defaults.get(feat, 0)
-                if feat in imp_cat_cols:
-                    opts = imp_cat_opts.get(feat, [str(default)])
+                # Binary/flag features (0/1) → number input clamped 0-1
+                # Categorical features listed in imp_cat_opts → selectbox
+                if feat in imp_cat_opts:
+                    opts = imp_cat_opts[feat]
                     patient_data[feat] = col.selectbox(feat, opts, key=f"imp_{feat}")
                 else:
-                    patient_data[feat] = col.number_input(feat, value=float(default), key=f"imp_{feat}")
+                    patient_data[feat] = col.number_input(
+                        feat,
+                        value=float(default),
+                        key=f"imp_{feat}"
+                    )
 
             submitted = st.form_submit_button("Predict Readmission Risk")
 
         if submitted:
             import pandas as _pd
-            row = _pd.DataFrame([patient_data])[imp_features]
+            # DataFrame columns already match imp_features — no extra filtering needed
+            row = _pd.DataFrame([patient_data])
             X_t = imp_prep.transform(row)
             model_obj = imp_models[imp_sel_model]
             prob = float(model_obj.predict_proba(X_t)[0, 1])
