@@ -25,6 +25,8 @@ st.set_page_config(
 
 ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = ROOT / "models"
+IMPROVED_MODEL_DIR = ROOT / "models" / "improved"
+RESULTS_DIR = ROOT / "results"
 DATA_DIR = ROOT / "datasets" / "dataset1"
 
 st.markdown("""
@@ -241,6 +243,35 @@ num_cols = metadata["numerical_columns"]
 cat_cols = metadata["categorical_columns"]
 defaults = metadata["defaults"]
 category_options = metadata["categorical_options"]
+# ============================================================
+# 2b. LOAD IMPROVED PIPELINE ARTIFACTS
+# ============================================================
+
+@st.cache_resource
+def load_improved_artifacts():
+    if not IMPROVED_MODEL_DIR.exists():
+        return None
+    try:
+        imp = {}
+        imp["models"] = {
+            "Logistic Regression": joblib.load(IMPROVED_MODEL_DIR / "logistic_regression_model.pkl"),
+            "Decision Tree":       joblib.load(IMPROVED_MODEL_DIR / "decision_tree_model.pkl"),
+            "Random Forest":       joblib.load(IMPROVED_MODEL_DIR / "random_forest_model.pkl"),
+            "XGBoost":             joblib.load(IMPROVED_MODEL_DIR / "xgboost_model.pkl"),
+        }
+        imp["preprocessor"]    = joblib.load(IMPROVED_MODEL_DIR / "preprocessor.pkl")
+        imp["thresholds"]      = joblib.load(IMPROVED_MODEL_DIR / "model_thresholds.pkl")
+        imp["input_features"]  = joblib.load(IMPROVED_MODEL_DIR / "input_features.pkl")
+        imp["metadata"]        = joblib.load(IMPROVED_MODEL_DIR / "feature_metadata.pkl")
+        imp["evaluation"]      = joblib.load(IMPROVED_MODEL_DIR / "model_evaluation.pkl")
+        imp["confusion_matrices"] = joblib.load(IMPROVED_MODEL_DIR / "confusion_matrices.pkl")
+        return imp
+    except Exception:
+        return None
+
+IMP = load_improved_artifacts()
+
+
 
 
 # ============================================================
@@ -384,7 +415,11 @@ with st.sidebar:
             "Model Evaluation",
             "Feature Importance",
             "Patient Assessment",
-            "Prediction Results"
+            "Prediction Results",
+            "── Improved Pipeline ──",
+            "Improved Model Comparison",
+            "Improved Feature Importance",
+            "Improved Patient Assessment",
         ],
         label_visibility="collapsed"
     )
@@ -1886,6 +1921,224 @@ elif page == "Prediction Results":
             "probability and must not be used for patient-care decisions."
         )
 
+
+
+# ============================================================
+# 18. IMPROVED MODEL COMPARISON
+# ============================================================
+
+elif page == "Improved Model Comparison":
+
+    section(
+        "Improved Model Comparison",
+        "Side-by-side performance of all 4 models from the improved pipeline (5-fold StratifiedGroupKFold CV)."
+    )
+
+    if IMP is None:
+        st.warning("Improved model artifacts not found. Run notebooks/train_improved_pipeline.py first.")
+    else:
+        imp_eval = IMP["evaluation"]
+
+        # Metrics table
+        st.subheader("Performance Metrics (held-out test set)")
+        display_cols = ["Model", "Threshold", "Accuracy", "Precision", "Recall", "F1", "ROC-AUC", "PR-AUC"]
+        available = [c for c in display_cols if c in imp_eval.columns]
+        st.dataframe(imp_eval[available].set_index("Model").style.format("{:.4f}"), width="stretch")
+
+        # Bar chart comparison
+        st.subheader("ROC-AUC & PR-AUC Comparison")
+        if "ROC-AUC" in imp_eval.columns and "PR-AUC" in imp_eval.columns:
+            melted = imp_eval[["Model", "ROC-AUC", "PR-AUC"]].melt(id_vars="Model", var_name="Metric", value_name="Score")
+            fig = px.bar(
+                melted, x="Model", y="Score", color="Metric", barmode="group",
+                color_discrete_sequence=["#0D9488", "#1E3A8A"],
+                title="ROC-AUC vs PR-AUC per Model"
+            )
+            fig.update_layout(height=400, yaxis_range=[0, 1])
+            st.plotly_chart(fig, width="stretch")
+
+        # ROC & PR curve images from results/
+        col1, col2 = st.columns(2)
+        roc_img = RESULTS_DIR / "roc_curve_comparison_improved.png"
+        pr_img  = RESULTS_DIR / "pr_curve_comparison_improved.png"
+        with col1:
+            if roc_img.exists():
+                st.image(str(roc_img), caption="ROC Curves – Improved Pipeline", width="stretch")
+            else:
+                st.info("ROC curve image not generated yet.")
+        with col2:
+            if pr_img.exists():
+                st.image(str(pr_img), caption="PR Curves – Improved Pipeline", width="stretch")
+            else:
+                st.info("PR curve image not generated yet.")
+
+        # Confusion matrices
+        st.subheader("Confusion Matrices")
+        cm_img = RESULTS_DIR / "confusion_matrices_improved.png"
+        if cm_img.exists():
+            st.image(str(cm_img), caption="Confusion Matrices – All 4 Improved Models", width="stretch")
+        else:
+            st.info("Confusion matrix image not generated yet.")
+
+        # Threshold optimisation
+        st.subheader("Threshold Optimisation")
+        thr_img = RESULTS_DIR / "threshold_optimization_curves.png"
+        if thr_img.exists():
+            st.image(str(thr_img), caption="Precision / Recall / F1 vs Threshold", width="stretch")
+
+        # Baseline vs improved comparison
+        st.subheader("Baseline vs Improved Pipeline")
+        cmp_img = RESULTS_DIR / "baseline_vs_improved_comparison.png"
+        if cmp_img.exists():
+            st.image(str(cmp_img), caption="Original vs Improved – Key Metrics", width="stretch")
+
+
+# ============================================================
+# 19. IMPROVED FEATURE IMPORTANCE
+# ============================================================
+
+elif page == "Improved Feature Importance":
+
+    section(
+        "Improved Feature Importance",
+        "Top clinical features ranked by the improved XGBoost and Random Forest models."
+    )
+
+    if IMP is None:
+        st.warning("Improved model artifacts not found. Run notebooks/train_improved_pipeline.py first.")
+    else:
+        imp_xgb_img = RESULTS_DIR / "feature_importance_xgb_improved.png"
+        imp_rf_img  = RESULTS_DIR / "feature_importance_rf_improved.png"
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("XGBoost – Top 20 Features")
+            if imp_xgb_img.exists():
+                st.image(str(imp_xgb_img), caption="XGBoost Feature Importance", width="stretch")
+            else:
+                st.info("XGBoost importance image not generated yet.")
+        with col2:
+            st.subheader("Random Forest – Top 20 Features")
+            if imp_rf_img.exists():
+                st.image(str(imp_rf_img), caption="Random Forest Feature Importance", width="stretch")
+            else:
+                st.info("Random Forest importance image not generated yet.")
+
+        # Interactive Plotly chart from loaded model
+        st.subheader("Interactive Feature Importance (XGBoost)")
+        try:
+            imp_xgb_model = IMP["models"]["XGBoost"]
+            imp_prep      = IMP["preprocessor"]
+            feat_names    = imp_prep.get_feature_names_out()
+            importances   = imp_xgb_model.feature_importances_
+            feat_df = (
+                __import__("pandas").DataFrame({"Feature": feat_names, "Importance": importances})
+                .sort_values("Importance", ascending=False)
+                .head(25)
+            )
+            fig = px.bar(
+                feat_df.sort_values("Importance"),
+                x="Importance", y="Feature",
+                orientation="h",
+                color="Importance",
+                color_continuous_scale="teal",
+                title="Top 25 Features – Improved XGBoost"
+            )
+            fig.update_layout(height=700)
+            st.plotly_chart(fig, width="stretch")
+        except Exception as ex:
+            st.warning(f"Could not build interactive chart: {ex}")
+
+
+# ============================================================
+# 20. IMPROVED PATIENT ASSESSMENT
+# ============================================================
+
+elif page == "Improved Patient Assessment":
+
+    section(
+        "Improved Patient Assessment",
+        "Run risk prediction using the improved 4-model pipeline with optimised thresholds."
+    )
+
+    if IMP is None:
+        st.warning("Improved model artifacts not found. Run notebooks/train_improved_pipeline.py first.")
+    else:
+        imp_models     = IMP["models"]
+        imp_prep       = IMP["preprocessor"]
+        imp_thresholds = IMP["thresholds"]
+        imp_features   = IMP["input_features"]
+        imp_meta       = IMP["metadata"]
+
+        imp_num_cols  = imp_meta["numerical_columns"]
+        imp_cat_cols  = imp_meta["categorical_columns"]
+        imp_defaults  = imp_meta["defaults"]
+        imp_cat_opts  = imp_meta["categorical_options"]
+
+        imp_sel_model = st.sidebar.selectbox(
+            "Improved model",
+            list(imp_models.keys()),
+            index=3,
+            key="imp_sel_model"
+        )
+
+        st.subheader("Enter Patient Information")
+
+        with st.form("imp_patient_form"):
+            cols = st.columns(3)
+            patient_data = {}
+            all_fields = imp_num_cols + imp_cat_cols
+            for i, feat in enumerate(all_fields):
+                col = cols[i % 3]
+                default = imp_defaults.get(feat, 0)
+                if feat in imp_cat_cols:
+                    opts = imp_cat_opts.get(feat, [str(default)])
+                    patient_data[feat] = col.selectbox(feat, opts, key=f"imp_{feat}")
+                else:
+                    patient_data[feat] = col.number_input(feat, value=float(default), key=f"imp_{feat}")
+
+            submitted = st.form_submit_button("Predict Readmission Risk")
+
+        if submitted:
+            import pandas as _pd
+            row = _pd.DataFrame([patient_data])[imp_features]
+            X_t = imp_prep.transform(row)
+            model_obj = imp_models[imp_sel_model]
+            prob = float(model_obj.predict_proba(X_t)[0, 1])
+            thr  = imp_thresholds.get(imp_sel_model, 0.5)
+            pred = "HIGH RISK – Likely Readmission" if prob >= thr else "LOW RISK – Unlikely Readmission"
+            colour = "#DC2626" if prob >= thr else "#16A34A"
+
+            st.markdown(f"""
+<div style="background:{colour};color:white;padding:20px;border-radius:12px;margin-top:14px;">
+  <h2 style="color:white;margin:0;">{pred}</h2>
+  <p style="margin:6px 0 0 0;font-size:1.1rem;">
+    Risk score: <strong>{prob:.4f}</strong> &nbsp;|&nbsp; Threshold: <strong>{thr:.4f}</strong>
+    &nbsp;|&nbsp; Model: <strong>{imp_sel_model}</strong>
+  </p>
+</div>
+""", unsafe_allow_html=True)
+
+            report_df = _pd.DataFrame([{
+                "Model": imp_sel_model,
+                "Risk Score": prob,
+                "Threshold": thr,
+                "Prediction": pred,
+                "Generated at": __import__("datetime").datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }])
+            st.download_button(
+                "Download Prediction Report",
+                report_df.to_csv(index=False),
+                file_name="carepredict_improved_report.csv",
+                mime="text/csv"
+            )
+            st.warning(
+                "This is an educational ML prototype – not clinically validated. "
+                "Do not use for patient-care decisions."
+            )
+
+elif page == "── Improved Pipeline ──":
+    st.info("👈 Select one of the **Improved Pipeline** pages from the sidebar.")
 
 # ============================================================
 # 17. FOOTER
