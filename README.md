@@ -116,6 +116,43 @@ The default threshold of 0.5 is not suitable for imbalanced data. For each model
 
 ---
 
+## 🚀 Improved Machine Learning Pipeline (v2.0)
+
+An enhanced, leak-free clinical machine learning pipeline was developed to address the limitations of the baseline approach:
+
+1. **Dimensionality & Clinical Feature Engineering:** Replaced **2,344 sparse binary features** with **205 dense, clinically validated features** by mapping 700+ ICD-9 codes into 9 standard clinical categories (*Circulatory, Respiratory, Digestive, Diabetes, Injury, Musculoskeletal, Genitourinary, Neoplasms, and Other*), engineering utilization ratios, hospital procedure/lab daily rates, and diabetic polypharmacy indicators.
+2. **5-Fold Stratified Group Cross-Validation:** Built using `StratifiedGroupKFold` on 57,214 training patients to ensure zero fold-to-fold leakage while preserving class balance.
+3. **Multi-Model Expansion:** Benchmark expanded to evaluate **Logistic Regression, Decision Tree, Random Forest, and XGBoost**.
+4. **Cost-Sensitive Weighting vs. SMOTE:** Empirically proved cost-sensitive weighting (`scale_pos_weight` / `balanced`) outperforms SMOTE on mixed tabular healthcare data in both discrimination and training speed.
+5. **Calibrated Threshold Optimization:** Optimal thresholds determined via Out-Of-Fold Precision-Recall curves.
+
+### 📊 Full Head-to-Head Comparison (Untouched Test Set: 20,153 Encounters)
+
+| Pipeline | Model | Threshold | Accuracy | Precision | Recall | F1-Score | ROC-AUC | PR-AUC |
+|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Original Baseline | Logistic Regression | 0.5032 | 0.6805 | 0.1767 | **0.5449** | 0.2669 | 0.6722 | *N/A* |
+| Original Baseline | Random Forest | 0.5146 | **0.7560** | 0.1959 | 0.4142 | 0.2660 | 0.6735 | *N/A* |
+| Original Baseline | XGBoost | 0.5376 | 0.7302 | 0.1917 | 0.4751 | **0.2732** | 0.6745 | *N/A* |
+| **Improved Pipeline** | **Logistic Regression** | 0.5400 | **0.7276** (+4.7%) | **0.1890** | 0.4714 | **0.2698** | 0.6690 | 0.2040 |
+| **Improved Pipeline** | **Decision Tree** | 0.5755 | **0.7554** | **0.1850** | 0.3794 | 0.2487 | 0.6476 | 0.1813 |
+| **Improved Pipeline** | **Random Forest** | 0.4714 | 0.7217 | 0.1844 | 0.4695 | 0.2648 | 0.6687 | 0.2010 |
+| **Improved Pipeline** | **XGBoost (Champion)** | 0.5480 | **0.7495** (+1.9%) | **0.1971** | 0.4384 | **0.2720** | **0.6757** | **0.2123** |
+
+![Baseline vs Improved Comparison](results/baseline_vs_improved_comparison.png)
+
+### Improved ROC & Precision-Recall Curves
+
+<p align="center">
+  <img src="results/roc_curve_comparison_improved.png" width="48%" />
+  <img src="results/pr_curve_comparison_improved.png" width="48%" />
+</p>
+
+### Improved Confusion Matrices (20,153 Encounters)
+
+![Improved Confusion Matrices](results/confusion_matrices_improved.png)
+
+---
+
 ## 📈 Results
 
 All metrics are computed on the **same held-out, patient-separated test set** (20,153 encounters, about 10.7 % positive).
@@ -179,21 +216,39 @@ Hospital-Readmission-Prediction/
 │   ├── IDS_mapping.csv              # ID → description lookup
 │   └── preprocessed_initial.csv     # Cleaned dataset
 ├── notebooks/
-│   ├── dataset1_analysis.ipynb      # Exploratory data analysis
-│   ├── preprocessing.ipynb          # Cleaning, splitting, encoding
-│   └── model_training.ipynb         # Tuning, thresholds, evaluation
-├── models/                          # Trained models and saved artifacts
+│   ├── dataset1_analysis.ipynb      # [Preserved] Exploratory data analysis
+│   ├── preprocessing.ipynb          # [Preserved] Original preprocessing
+│   ├── model_training.ipynb         # [Preserved] Original model training
+│   ├── improved_pipeline.ipynb      # [New] Complete improved interactive notebook
+│   └── train_improved_pipeline.py   # [New] Standalone improved training script
+├── models/
 │   ├── logistic_regression_model.pkl
 │   ├── random_forest_model.pkl
 │   ├── xgboost_model.pkl
 │   ├── preprocessor.pkl
 │   ├── model_thresholds.pkl
-│   └── ...                          # metadata, evaluation and feature files
+│   ├── ...                          # Original artifacts
+│   └── improved/                    # [New] Improved model artifacts
+│       ├── logistic_regression_model.pkl
+│       ├── decision_tree_model.pkl
+│       ├── random_forest_model.pkl
+│       ├── xgboost_model.pkl
+│       ├── preprocessor.pkl         # 205-feature ColumnTransformer
+│       ├── model_thresholds.pkl     # Calibrated OOF thresholds
+│       └── model_evaluation.pkl
 ├── results/
-│   ├── model_comparison.csv
-│   └── roc_curve_comparison.png
+│   ├── model_comparison.csv         # Original baseline comparison
+│   ├── improved_model_comparison.csv # [New] Improved model comparison
+│   ├── full_baseline_vs_improved_comparison.csv
+│   ├── smote_vs_class_weights.csv   # [New] Class weights vs SMOTE ablation
+│   ├── roc_curve_comparison.png     # Original ROC plot
+│   ├── roc_curve_comparison_improved.png
+│   ├── pr_curve_comparison_improved.png
+│   ├── confusion_matrices_improved.png
+│   └── baseline_vs_improved_comparison.png
 ├── frontend/
-│   └── app.py                       # Streamlit dashboard
+│   ├── app.py                       # Original Streamlit dashboard
+│   └── app_improved.py              # [New] CarePredict 2.0 dashboard
 ├── .gitignore
 └── README.md
 ```
@@ -202,11 +257,21 @@ Hospital-Readmission-Prediction/
 
 ## ⚙️ Installation and Usage
 
-### 1. Clone the repository
+### 1. Run the Improved CarePredict 2.0 Dashboard
 
 ```bash
-git clone https://github.com/nischithpl/Hospital-Readmission-Prediction.git
-cd Hospital-Readmission-Prediction
+streamlit run frontend/app_improved.py
+```
+
+Or run the original dashboard:
+```bash
+streamlit run frontend/app.py
+```
+
+### 2. Re-run the Improved Machine Learning Pipeline
+
+```bash
+python notebooks/train_improved_pipeline.py
 ```
 
 ### 2. (Optional) Create a virtual environment
@@ -281,3 +346,5 @@ Run the notebooks in this order from the `notebooks/` folder:
 
 - Strack, B. et al. (2014). *Impact of HbA1c Measurement on Hospital Readmission Rates: Analysis of 70,000 Clinical Database Patient Records.* BioMed Research International.
 - UCI Machine Learning Repository: [Diabetes 130-US Hospitals for Years 1999–2008](https://archive.ics.uci.edu/dataset/296/diabetes+130-us+hospitals+for+years+1999-2008)
+
+
