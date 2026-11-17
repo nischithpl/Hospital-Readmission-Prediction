@@ -135,14 +135,13 @@ div[data-testid="stForm"] h5 {
     margin-bottom: 12px !important;
 }
 
-/* Force ALL widget labels to be dark navy and bold */
-[data-testid="stWidgetLabel"],
-[data-testid="stWidgetLabel"] *,
-[data-testid="stWidgetLabel"] p,
-[data-testid="stWidgetLabel"] span,
-label[data-testid="stWidgetLabel"],
-label[data-testid="stWidgetLabel"] *,
-label[data-testid="stWidgetLabel"] p,
+/* Force widget labels in MAIN area (Patient Form & Dashboard) to be dark navy */
+[data-testid="stMain"] [data-testid="stWidgetLabel"],
+[data-testid="stMain"] [data-testid="stWidgetLabel"] *,
+[data-testid="stMain"] [data-testid="stWidgetLabel"] p,
+[data-testid="stMain"] [data-testid="stWidgetLabel"] span,
+[data-testid="stMain"] label[data-testid="stWidgetLabel"],
+[data-testid="stMain"] label[data-testid="stWidgetLabel"] *,
 div[data-testid="stForm"] label,
 div[data-testid="stForm"] label *,
 div[data-testid="stForm"] label p,
@@ -150,6 +149,26 @@ div[data-testid="stForm"] span {
     color: #153B5B !important;
     font-weight: 600 !important;
     font-size: 14px !important;
+}
+
+/* Force widget labels in SIDEBAR (Active Prediction Model, etc.) to be PURE WHITE */
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"],
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] *,
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] span,
+section[data-testid="stSidebar"] label[data-testid="stWidgetLabel"],
+section[data-testid="stSidebar"] label[data-testid="stWidgetLabel"] *,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] label * {
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+}
+
+/* Sidebar tooltip icon (?) */
+section[data-testid="stSidebar"] [data-testid="stTooltipHoverTarget"] svg {
+    fill: #A0C4DF !important;
+    color: #A0C4DF !important;
 }
 
 /* Number input fields and text inputs */
