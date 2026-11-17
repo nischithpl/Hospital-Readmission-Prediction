@@ -32,9 +32,13 @@ DATA_DIR = ROOT / "data"
 # CarePredict classic styling
 st.markdown("""
 <style>
-.stApp {
-    background: #F4F7FB;
-    color: #263B50;
+/* ============================================================ */
+/* BASE THEME & LAYOUT                                          */
+/* ============================================================ */
+
+.stApp, [data-testid="stAppViewContainer"] {
+    background-color: #F4F7FB !important;
+    color: #263B50 !important;
 }
 
 .block-container {
@@ -42,21 +46,40 @@ st.markdown("""
     max-width: 1450px;
 }
 
-h1, h2, h3 {
+/* Headings in main area */
+h1, h2, h3, h4, h5, h6 {
     color: #153B5B !important;
+    font-weight: 700 !important;
 }
 
-p, label, span {
+p, span {
     color: #34495E;
 }
 
+/* ============================================================ */
+/* SIDEBAR (Dark Navy Background with White Text)               */
+/* ============================================================ */
+
 section[data-testid="stSidebar"] {
-    background: #123650;
+    background-color: #123650 !important;
 }
 
 section[data-testid="stSidebar"] * {
-    color: white !important;
+    color: #FFFFFF !important;
 }
+
+section[data-testid="stSidebar"] div[data-testid="stMetric"] {
+    background: #214A63 !important;
+    border-color: #45677D !important;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stMetric"] * {
+    color: #FFFFFF !important;
+}
+
+/* ============================================================ */
+/* HERO BANNER                                                  */
+/* ============================================================ */
 
 .hero {
     background: linear-gradient(110deg, #123650, #176B87, #23988D);
@@ -66,7 +89,7 @@ section[data-testid="stSidebar"] * {
 }
 
 .hero h1 {
-    color: white !important;
+    color: #FFFFFF !important;
     font-size: 30px;
     margin: 0;
     padding-bottom: 6px;
@@ -78,19 +101,12 @@ section[data-testid="stSidebar"] * {
     font-size: 15px;
 }
 
-.card {
-    background: white;
-    border: 1px solid #DFE7EF;
-    padding: 18px;
-    border-radius: 12px;
-    margin-bottom: 12px;
-}
-
-div[data-testid="stMetric"] {
-    background: white;
-    border: 1px solid #DFE7EF;
-    border-radius: 12px;
-    padding: 14px 18px;
+/* Cards & Metrics in main view */
+.card, div[data-testid="stMetric"] {
+    background: #FFFFFF !important;
+    border: 1px solid #DFE7EF !important;
+    border-radius: 12px !important;
+    padding: 14px 18px !important;
 }
 
 div[data-testid="stMetric"] label,
@@ -98,47 +114,136 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
     color: #153B5B !important;
 }
 
-section[data-testid="stSidebar"] div[data-testid="stMetric"] {
-    background: #214A63;
-    border-color: #45677D;
+/* ============================================================ */
+/* PATIENT READMISSION PREDICTION FORM & LABELS (DARK & VISIBLE)*/
+/* ============================================================ */
+
+/* White Form Card */
+[data-testid="stForm"] {
+    background-color: #FFFFFF !important;
+    border: 1.5px solid #DCE6EF !important;
+    border-radius: 14px !important;
+    padding: 24px !important;
+    box-shadow: 0 2px 8px rgba(18, 54, 80, 0.04) !important;
 }
 
-section[data-testid="stSidebar"] div[data-testid="stMetric"] * {
-    color: white !important;
+/* Form header */
+div[data-testid="stForm"] h5 {
+    color: #153B5B !important;
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    margin-bottom: 12px !important;
 }
+
+/* Force ALL widget labels to be dark navy and bold */
+[data-testid="stWidgetLabel"],
+[data-testid="stWidgetLabel"] *,
+[data-testid="stWidgetLabel"] p,
+[data-testid="stWidgetLabel"] span,
+label[data-testid="stWidgetLabel"],
+label[data-testid="stWidgetLabel"] *,
+label[data-testid="stWidgetLabel"] p,
+div[data-testid="stForm"] label,
+div[data-testid="stForm"] label *,
+div[data-testid="stForm"] label p,
+div[data-testid="stForm"] span {
+    color: #153B5B !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+}
+
+/* Number input fields and text inputs */
+div[data-baseweb="input"] input,
+div[data-testid="stNumberInput"] input {
+    color: #123650 !important;
+    background-color: #FFFFFF !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+}
+
+/* Input borders and backgrounds */
+div[data-baseweb="input"] > div,
+div[data-baseweb="select"] > div {
+    background-color: #FFFFFF !important;
+    border: 1.5px solid #C9D7E5 !important;
+    border-radius: 8px !important;
+}
+
+/* Dropdown select option text */
+div[data-baseweb="select"] span,
+div[data-baseweb="select"] div {
+    color: #123650 !important;
+    font-weight: 500 !important;
+}
+
+/* Number input step (+/-) buttons */
+div[data-testid="stNumberInput"] button {
+    background-color: #F4F7FB !important;
+    border: 1px solid #C9D7E5 !important;
+}
+
+div[data-testid="stNumberInput"] button svg {
+    fill: #153B5B !important;
+    color: #153B5B !important;
+}
+
+/* Help tooltip icon */
+[data-testid="stTooltipHoverTarget"] svg {
+    fill: #176B87 !important;
+}
+
+/* ============================================================ */
+/* BUTTONS & TABS                                               */
+/* ============================================================ */
 
 .stButton button,
 .stFormSubmitButton button,
 .stDownloadButton button {
-    background: #176B87;
-    color: white !important;
-    border-radius: 8px;
-    border: none;
-    font-weight: 600;
-    padding: 8px 18px;
+    background: #176B87 !important;
+    color: #FFFFFF !important;
+    border-radius: 8px !important;
+    border: none !important;
+    font-weight: 600 !important;
+    padding: 9px 20px !important;
 }
 
 .stButton button:hover,
 .stFormSubmitButton button:hover {
-    background: #12546B;
-    color: white !important;
+    background: #12546B !important;
+    color: #FFFFFF !important;
 }
 
-[data-testid="stForm"] {
-    background: #FFFFFF;
-    border: 1px solid #DCE6EF;
-    border-radius: 12px;
-    padding: 20px;
+/* Tab Headers */
+button[data-baseweb="tab"] {
+    color: #153B5B !important;
+    font-weight: 600 !important;
+    font-size: 14.5px !important;
 }
 
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #176B87 !important;
+    border-bottom-color: #176B87 !important;
+}
+
+/* Expanders & DataFrames */
+[data-testid="stExpander"] {
+    background: #FFFFFF !important;
+    border: 1px solid #DCE6EF !important;
+    border-radius: 10px !important;
+}
+
+[data-testid="stExpander"] * {
+    color: #153B5B !important;
+}
+
+/* Footer */
 .footer {
     text-align: center;
     color: #718493;
     font-size: 13px;
     padding: 24px 0 10px 0;
 }
-</style>
-""", unsafe_allow_html=True)
+</style>""", unsafe_allow_html=True)
 
 # ============================================================
 # 2. LOAD TRAINED ARTIFACTS
