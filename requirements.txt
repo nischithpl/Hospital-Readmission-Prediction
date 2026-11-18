@@ -1,0 +1,13 @@
+# Versions are not pinned because none were recorded in the repository.
+# After a successful run, `pip freeze > requirements.txt` will pin your exact versions.
+pandas
+numpy
+scikit-learn
+xgboost
+imbalanced-learn
+matplotlib
+seaborn
+plotly
+streamlit
+joblib
+jupyter

@@ -1,275 +1,203 @@
-# 🏥 CarePredict — 30-Day Hospital Readmission Prediction
+# CarePredict: 30-Day Hospital Readmission Prediction
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
-![scikit-learn](https://img.shields.io/badge/scikit--learn-ML%20Pipelines-orange?logo=scikit-learn)
-![Streamlit](https://img.shields.io/badge/Streamlit-CarePredict%20Dashboard-red?logo=streamlit)
-![Dataset](https://img.shields.io/badge/Dataset-HLT--005%20Synthetic-teal)
-![Status](https://img.shields.io/badge/Status-Undergraduate%20Engineering%20Project-green)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-pipelines-orange?logo=scikit-learn)
+![XGBoost](https://img.shields.io/badge/XGBoost-gradient%20boosting-green)
+![Streamlit](https://img.shields.io/badge/Streamlit-dashboard-red?logo=streamlit)
 
-A machine learning project that predicts whether an inpatient will experience an unplanned **30-day hospital readmission** following discharge. Built on the **HLT-005 Synthetic Hospital Admission Dataset**, this project implements a leakage-free preprocessing pipeline, patient-level cross-validation (`StratifiedGroupKFold`), and three supervised classification algorithms (**Logistic Regression**, **Decision Tree**, and **Random Forest**).
+Machine learning models that predict whether a hospitalised patient with diabetes will be **readmitted within 30 days of discharge**, built on the public *Diabetes 130-US Hospitals (1999–2008)* dataset. The project compares Logistic Regression, Random Forest and XGBoost (plus a Decision Tree in the improved pipeline), uses patient-level splitting to avoid leakage, tunes the decision threshold for imbalanced data, and includes a Streamlit dashboard for exploring results and screening a patient profile.
 
-The system features **CarePredict**, an interactive Streamlit clinical dashboard providing real-time patient readmission risk assessment, transparent decision factors, and an academic model performance dashboard.
+> **Disclaimer:** This is an academic prototype. It is not validated for clinical use and must not be used to make decisions about patient care.
 
-> ⚠️ **Disclaimer & Notice:** This project uses a **synthetic clinical dataset (HLT-005)** designed for healthcare machine learning education and benchmarking. It does **not** contain real protected health information (PHI) and is an academic engineering prototype not intended for direct clinical decision-making.
-
----
-
-## 📑 Table of Contents
-
-1. [Project Overview & Objectives](#-project-overview--objectives)
-2. [Problem Statement](#-problem-statement)
-3. [Dataset Description (HLT-005)](#-dataset-description-hlt-005)
-4. [Exploratory Data Analysis (EDA)](#-exploratory-data-analysis-eda)
-5. [Data Preprocessing & Leakage Prevention](#-data-preprocessing--leakage-prevention)
-6. [Feature Selection & Clinical Mapping](#-feature-selection--clinical-mapping)
-7. [Machine Learning Algorithms](#-machine-learning-algorithms)
-8. [Experimental Results & Evaluation](#-experimental-results--evaluation)
-9. [CarePredict Web Dashboard](#-carepredict-web-dashboard)
-10. [Repository Structure](#-repository-structure)
-11. [How to Run the Project](#-how-to-run-the-project)
-12. [Limitations of Synthetic Data](#-limitations-of-synthetic-data)
+An accompanying IEEE-format report describes the study in full.
 
 ---
 
-## 🎯 Project Overview & Objectives
+## Contents
 
-Under the Hospital Readmissions Reduction Program (HRRP), acute care hospitals face substantial financial penalties for higher-than-expected 30-day readmission rates. Unplanned readmissions represent adverse clinical outcomes, patient distress, and avoidable healthcare spending.
-
-### Core Objectives:
-1. **Analyze** inpatient admission patterns, comorbidities, and demographic risk factors in the HLT-005 synthetic dataset.
-2. **Engineer a Leakage-Free Pipeline**: Implement patient-level group splitting (`StratifiedGroupKFold`) so patients with multiple hospital admissions never leak between train and test sets.
-3. **Select 7 Clinically Meaningful Features**: Focus on predictors accessible prior to discharge (Age, Prior Admissions, Prior ED Visits, Length of Stay, Comorbidity Score, Diagnosis Category, ICU Admission).
-4. **Train & Benchmark 3 Classifiers**: Compare Logistic Regression, Decision Tree, and Random Forest using balanced class weighting to handle target imbalance (17.3% readmission rate).
-5. **Prioritize Recall & Discrimination**: Optimize models to catch high-risk patients who would benefit most from post-discharge care coordination.
-6. **Deliver an Interactive Dashboard**: Connect the exact trained pipeline directly to a Streamlit interface for live demonstration and college evaluation.
-
----
-
-## 🔍 Problem Statement
-
-Given a patient's clinical indicators upon admission and throughout their inpatient stay, predict whether the patient will be readmitted to the hospital within **30 days** of discharge:
-
-$$\text{Target: } y \in \{0, 1\}$$
-- $y = 0$: No readmission within 30 days
-- $y = 1$: Readmitted within 30 days of discharge
-
-Because only **17.26%** of hospital stays result in 30-day readmission, the dataset exhibits class imbalance. Standard accuracy is an insufficient metric; models must be evaluated on **Recall (Sensitivity)**, **Precision**, **F1-score**, **ROC-AUC**, and **PR-AUC**.
+1. [Results at a glance](#results-at-a-glance)
+2. [Dataset](#dataset)
+3. [Method](#method)
+4. [Class imbalance: weights vs SMOTE](#class-imbalance-class-weights-vs-smote)
+5. [Dashboard](#dashboard)
+6. [Repository structure](#repository-structure)
+7. [Getting started](#getting-started)
+8. [Limitations](#limitations)
+9. [References and credits](#references-and-credits)
 
 ---
 
-## 🗄️ Dataset Description (HLT-005)
+## Results at a glance
 
-- **Source**: [HLT-005 – Synthetic Hospital Admission Dataset (Hugging Face)](https://huggingface.co/datasets/xpertsystems/hlt005-sample)
-- **File**: `data/admissions.csv`
-- **Total Records**: 5,000 hospital encounters
-- **Unique Patients**: 1,580 individual patients (`patient_id`)
-- **Total Attributes**: 76 raw columns covering demographics, triage vitals, DRG diagnostic codes, severity scores, and utilization history.
-- **Target Column**: `readmit_flag_30d` (0 = Not Readmitted: 4,137 | 1 = Readmitted: 863)
+All numbers are on a held-out test set of **20,153 encounters** (2,151 readmissions, about 10.7%) from patients never seen in training.
 
-### Data Leakage Columns Explicitly Excluded:
-To ensure genuine predictive validity, downstream outcome metrics and target-derived risk scores were strictly removed prior to training:
-- `lace_plus_score`, `readmit_risk_30d`, `readmit_risk_60d`, `readmit_risk_90d`
-- `readmit_risk_category`, `readmit_cause_category`
-- `discharge_date`, `discharge_disposition`
+**Baseline pipeline** (the models reported in the paper):
 
----
-
-## 📊 Exploratory Data Analysis (EDA)
-
-All exploratory visualizations are automatically generated and saved in `results/`:
-
-| Visualization | Description |
-|---|---|
-| `results/target_class_distribution.png` | Target class breakdown: 82.7% non-readmitted vs 17.3% 30-day readmissions |
-| `results/age_distribution.png` | Stacked age distribution stratified by readmission status |
-| `results/length_of_stay_distribution.png` | Histogram & KDE of hospital stay duration (`los_days`) |
-| `results/correlation_heatmap.png` | Pearson correlation matrix across numerical clinical predictors |
-| `results/feature_distributions.png` | 2x2 multi-panel distribution of prior admits, prior ED visits, CCI, and ICU status |
-| `results/missing_values.png` | Full audit of missing entries across all 76 columns |
-
-### Key EDA Takeaways:
-- **Missing Values**: The 7 selected modeling features contain **0% missing values (100% complete data)**. Missing entries in the broader dataset are confined to conditional downstream attributes (`readmit_cause_category`, `hac_type`, `age_group`).
-- **Length of Stay**: Patients with extended hospitalizations (>7 days) exhibit elevated readmission probability.
-- **Comorbidity & Prior Utilization**: Patients with $\ge 2$ prior admissions in the last 12 months show significantly higher readmission likelihood.
-
----
-
-## 🛠️ Data Preprocessing & Leakage Prevention
-
-1. **Patient-Level Isolation (`StratifiedGroupKFold`)**:
-   - The 5,000 encounters belong to 1,580 unique patients (many patients have 2–6 admissions).
-   - Random splitting would place encounters from the **same patient** into both training and test sets, leading to severe patient data leakage.
-   - Using `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)` grouped by `patient_id` guarantees **ZERO patient overlap** between train (3,992 encounters, 79.8%) and held-out test (1,008 encounters, 20.2%).
-2. **Numerical Pipeline**:
-   - `SimpleImputer(strategy='median')`: Robust against outliers.
-   - `StandardScaler()`: Standardizes features to mean 0, unit variance.
-3. **Categorical Pipeline**:
-   - `SimpleImputer(strategy='most_frequent')`: Handles potential missing categories.
-   - `OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore')`: Converts categorical strings into dense binary indicators.
-4. **Pipeline Encapsulation**:
-   - All transformations are bundled into a `ColumnTransformer` fitted **strictly on training data**, preventing lookahead leakage.
-
----
-
-## 🧬 Feature Selection & Clinical Mapping
-
-To keep the clinical input form intuitive and suitable for presentation while maintaining a 1:1 match with the model preprocessor, **7 core features** were selected:
-
-| Feature Name | Type | Range / Options | Clinical Significance |
-|---|---|---|---|
-| `age` | Numeric | 0 – 120 years | Older patients face higher post-acute vulnerability |
-| `prior_admits_12mo` | Numeric | 0 – 20 admissions | Recurring inpatient history indicates chronic instability |
-| `prior_ed_visits_6mo` | Numeric | 0 – 20 visits | Frequent emergency visits reflect ambulatory care gaps |
-| `los_days` | Numeric | 0.5 – 90.0 days | Acute illness severity and complex recovery trajectory |
-| `cci_score` | Numeric | 0 – 20 points | Charlson Comorbidity Index measuring chronic disease burden |
-| `diagnosis_category` | Categorical | 10 Clinical Groups | Primary diagnosis mapped from MS-DRG codes |
-| `icu_flag_str` | Categorical | "No" / "Yes" | Critical care stay during hospitalization |
-
-### Clinical Diagnosis Categorization (from 25 MS-DRGs):
-1. **Infection/Sepsis** (Septicemia, Severe Sepsis)
-2. **Cardiovascular** (Heart Failure, Chest Pain, Percutaneous Cardiac Stents)
-3. **Orthopedic/Musculoskeletal** (Major Joint Replacement, Spinal Fusion, Fractures)
-4. **Respiratory** (Pneumonia, Respiratory Infections)
-5. **Neurological** (Stroke, Intracranial Hemorrhage, Seizures)
-6. **Digestive/GI** (Esophagitis, Gastrointestinal Disorders)
-7. **Renal** (Acute & Chronic Kidney Failure)
-8. **Psychiatric/Substance** (Psychoses, Substance Abuse Rehabilitation)
-9. **Obstetric/Newborn** (Vaginal Delivery, Normal Newborn)
-10. **Other/Symptoms** (General Symptoms & Other Categories)
-
----
-
-## 🤖 Machine Learning Algorithms
-
-Three supervised classification algorithms were implemented and trained using cost-sensitive class weighting (`class_weight='balanced'`) to penalize false negatives:
-
-1. **Logistic Regression**:
-   - Serves as the parametric, interpretable clinical baseline.
-   - Regularized with $L_2$ penalty ($C=0.1$) to prevent overfitting on collinear indicators.
-2. **Decision Tree Classifier**:
-   - White-box rule-based model.
-   - Regularized with `max_depth=4` and `min_samples_leaf=20` to prevent deep branch memorization and ensure high interpretability.
-3. **Random Forest Classifier**:
-   - Non-parametric ensemble consisting of 150 bootstrapped decision trees.
-   - Constrained to `max_depth=5` and `min_samples_leaf=15` with random feature subspacing to reduce variance and capture non-linear clinical risk interactions.
-
----
-
-## 📈 Experimental Results & Evaluation
-
-All models were evaluated on the held-out test partition (1,008 encounters, 181 readmissions) with fixed random seeds for strict reproducibility:
-
-### Official Model Comparison Table:
-| Algorithm | Accuracy | Precision | Recall | F1-Score | ROC-AUC | PR-AUC |
+| Model | Threshold | Accuracy | Precision | Recall | F1 | ROC-AUC |
 |---|---|---|---|---|---|---|
-| **Logistic Regression** | 59.72% | 23.02% | 53.04% | 0.3211 | 0.6139 | 0.2462 |
-| **Decision Tree** | 63.69% | 23.50% | 45.30% | 0.3094 | 0.6094 | 0.2421 |
-| **Random Forest (Best)** | **63.19%** | **25.64%** | **55.25%** | **0.3503** | **0.6228** | **0.2444** |
+| Logistic Regression | 0.5032 | 0.6805 | 0.1767 | 0.5449 | 0.2669 | 0.6722 |
+| Random Forest | 0.5146 | 0.7560 | 0.1959 | 0.4142 | 0.2660 | 0.6735 |
+| XGBoost | 0.5376 | 0.7302 | 0.1917 | 0.4751 | 0.2732 | 0.6745 |
 
-### Confusion Matrices (Held-out Test Set, N=1,008):
-- **Random Forest**: True Negatives = 537 | False Positives = 290 | False Negatives = 81 | **True Positives = 100**
-- **Logistic Regression**: True Negatives = 506 | False Positives = 321 | False Negatives = 85 | **True Positives = 96**
-- **Decision Tree**: True Negatives = 560 | False Positives = 267 | False Negatives = 99 | **True Positives = 82**
+**Improved pipeline** (engineered features, cross-validated tuning, out-of-fold thresholds):
 
-### Performance Analysis & Selection Justification:
-- **Random Forest is the Champion Model**: It achieves the highest **ROC-AUC (0.6228)**, highest **Recall (55.25%)**, and highest **F1-Score (0.3503)**.
-- **Clinical Priority on Recall**: In hospital readmission prevention, the cost of a False Negative (missing a patient who will be readmitted and penalized under HRRP) is dramatically higher than a False Positive (offering low-cost post-discharge follow-up to a patient who did not need it). Random Forest successfully identifies over 55% of all readmissions.
-- **Discrimination**: With a positive prevalence of 17.3%, the baseline no-skill PR-AUC is 0.173. All three models score ~0.245, confirming genuine predictive signal over random chance.
+| Model | Threshold | Accuracy | Precision | Recall | F1 | ROC-AUC | PR-AUC |
+|---|---|---|---|---|---|---|---|
+| Logistic Regression | 0.5400 | 0.7276 | 0.1890 | 0.4714 | 0.2698 | 0.6690 | 0.2040 |
+| Decision Tree | 0.5755 | 0.7554 | 0.1850 | 0.3794 | 0.2487 | 0.6476 | 0.1813 |
+| Random Forest | 0.4714 | 0.7217 | 0.1844 | 0.4695 | 0.2648 | 0.6687 | 0.2010 |
+| XGBoost | 0.5480 | 0.7495 | 0.1971 | 0.4384 | 0.2720 | 0.6757 | 0.2123 |
 
----
+**How to read this:** every model reaches a ROC-AUC of about 0.65–0.68, and the models are close to one another. Predicting 30-day readmission from administrative records is hard, so the differences between models are small compared with the gap to a perfect classifier. Precision is low (about 0.18–0.20): at the chosen thresholds, roughly four in five flagged patients are not readmitted. The "improved" pipeline did not clearly beat the baseline; its main gains are a more careful experimental design and a PR-AUC evaluation.
 
-## 💻 CarePredict Web Dashboard
+Full tables are in `results/full_baseline_vs_improved_comparison.csv` and `results/improved_model_comparison.csv`.
 
-The frontend is implemented in **Streamlit** (`frontend/app.py`), retaining the classic CarePredict theme (deep navy `#123650`, teal `#176B87`, and crisp white metric cards):
+| ROC curves (baseline) | ROC curves (improved) |
+|---|---|
+| ![ROC baseline](results/roc_curve_comparison.png) | ![ROC improved](results/roc_curve_comparison_improved.png) |
 
-### Section 1: Patient Readmission Prediction
-- 7 simple form fields matching the exact trained pipeline.
-- Instant risk prediction: **⚠️ Readmission Likely** or **✅ Readmission Not Likely**.
-- Estimated probability percentage and model selection dropdown.
-- Automated clinical risk driver highlights.
-- Reset button to quickly restore defaults.
-- Downloadable prediction report (CSV).
-
-### Section 2: Model Performance Dashboard
-- **Dataset Overview**: Encounters, unique patients, and readmission counts.
-- **Model Comparison Table & Grouped Bar Chart**: Live evaluation metrics.
-- **Interactive Confusion Matrix**: Dropdown selector to view individual and side-by-side matrices with TN/FP/FN/TP breakdowns.
-- **ROC & Precision-Recall Curves**: High-resolution curves with baseline comparisons.
-- **Random Forest Feature Importance**: Gini ranking of predictors.
-
-### Section 3: Exploratory Data Analysis (EDA)
-- Displays all 6 exploratory figures for immediate reference during presentation questions.
+![Baseline vs improved](results/baseline_vs_improved_comparison.png)
 
 ---
 
-## 📁 Repository Structure
+## Dataset
+
+- **Source:** [Diabetes 130-US Hospitals for Years 1999–2008](https://archive.ics.uci.edu/dataset/296/diabetes+130-us+hospitals+for+years+1999-2008), UCI Machine Learning Repository (introduced by Strack et al., 2014).
+- **File:** `datasets/dataset1/diabetic_data.csv` (`IDS_mapping.csv` maps the admission and discharge ID codes).
+- **Size:** 101,766 encounters, 71,518 unique patients, 50 columns.
+- **Target:** `readmitted == "<30"` → 1, otherwise 0. That is 11,357 positive encounters (about 11.2%), so the classes are imbalanced and accuracy alone is misleading.
+
+---
+
+## Method
+
+**Patient-level split.** Many patients have several encounters, so a random row split would put the same patient in both train and test. Both pipelines use `GroupShuffleSplit` grouped by `patient_nbr` (80/20, seed 42), giving 81,613 training and 20,153 test encounters with no patient overlap. All preprocessing is fitted on the training data only.
+
+### Baseline pipeline (`notebooks/model_training.ipynb`)
+
+- Three models: Logistic Regression and Random Forest (200 trees) with `class_weight="balanced"`, and XGBoost (200 trees, depth 5, learning rate 0.1).
+- The decision threshold for each model is chosen to maximise F1 on a separate validation split of the training data, then applied once to the test set.
+
+### Improved pipeline (`notebooks/train_improved_pipeline.py`, `notebooks/improved_pipeline.ipynb`)
+
+- **Feature engineering (62 input features):** age midpoint, ICD-9 diagnoses grouped into clinical categories, prior-visit totals and ratios, per-day lab/procedure/medication rates, a clinical-complexity score, medication change counts, and glycemic (A1C and glucose) indicators.
+- **Models:** Logistic Regression, Decision Tree, Random Forest and XGBoost. A small set of candidate hyperparameters per model was compared with 5-fold `StratifiedGroupKFold` on the training patients.
+- **Thresholds:** chosen from out-of-fold predictions on the precision-recall curve, not from the test set.
+- **Metrics:** accuracy, precision, recall, F1, ROC-AUC and PR-AUC. The no-skill PR-AUC equals the prevalence (about 0.11), which is the reference point for the PR-AUC values above.
+
+| Top XGBoost features | Threshold trade-off |
+|---|---|
+| ![Feature importance](results/feature_importance_xgb_improved.png) | ![Threshold curves](results/threshold_optimization_curves.png) |
+
+The strongest XGBoost features are prior inpatient history (`has_prior_inpatient`, `inpatient_visit_ratio`, `number_inpatient`) and discharge disposition categories.
+
+---
+
+## Class imbalance: class weights vs SMOTE
+
+The improved pipeline compares cost-sensitive weighting with SMOTE oversampling (`sampling_strategy=0.5`, applied inside the training fold only) on one validation fold of the training data:
+
+| Method | ROC-AUC | PR-AUC |
+|---|---|---|
+| XGBoost, `scale_pos_weight` | 0.6823 | 0.2206 |
+| XGBoost, SMOTE | 0.6738 | 0.2112 |
+| Decision Tree, `class_weight="balanced"` | 0.6468 | 0.1887 |
+| Decision Tree, SMOTE | 0.6361 | 0.1809 |
+
+Class weighting scored slightly higher than SMOTE for both models and is cheaper, so it is used in the final models. (Source: `results/smote_vs_class_weights.csv`.)
+
+---
+
+## Dashboard
+
+`frontend/app_improved.py` ("CarePredict 2.0") is a Streamlit app that loads the saved models in `models/improved/`. Its eight pages are:
+
+1. Executive Summary
+2. Pipeline Improvements
+3. Model Comparison & Metrics
+4. ROC & PR Curves
+5. Confusion Matrices
+6. Feature Importance
+7. Class Imbalance Analysis
+8. Patient Readmission Screener (enter a patient profile, choose a model, get a risk flag using that model's tuned threshold)
+
+It also reads `datasets/dataset1/diabetic_data.csv` and several files in `results/`, so run it from the repository root with those folders in place.
+
+---
+
+## Repository structure
 
 ```
-Hospital-Readmission-Prediction/
-├── data/
-│   └── admissions.csv                     # HLT-005 synthetic hospital admission dataset (5,000 rows)
-├── frontend/
-│   └── app.py                             # CarePredict Streamlit web application
-├── models/
-│   ├── logistic_regression_model.pkl      # Trained Logistic Regression model
-│   ├── decision_tree_model.pkl            # Trained Decision Tree model
-│   ├── random_forest_model.pkl            # Trained Random Forest model (champion)
-│   ├── preprocessor.pkl                   # Fitted Scikit-Learn ColumnTransformer
-│   ├── model_evaluation.pkl               # Test set evaluation metrics DataFrame
-│   ├── model_thresholds.pkl               # Classification thresholds
-│   ├── confusion_matrices.pkl             # Confusion matrices dict
-│   ├── input_features.pkl                 # Exact 7 feature names list
-│   ├── feature_metadata.pkl               # Feature types, options, and defaults
-│   └── dataset_summary.pkl                # Summary statistics for dashboard cards
+.
+├── datasets/dataset1/
+│   ├── diabetic_data.csv              # UCI Diabetes 130-US Hospitals (main dataset)
+│   ├── IDS_mapping.csv                # Admission / discharge ID lookup
+│   └── preprocessed_initial.csv       # Output of notebooks/preprocessing.ipynb
 ├── notebooks/
-│   ├── pipeline.ipynb                     # Interactive step-by-step Jupyter Notebook
-│   └── train_pipeline.py                  # Standalone executable pipeline script
-├── results/
-│   ├── target_class_distribution.png      # Target distribution plot
-│   ├── age_distribution.png               # Age distribution plot
-│   ├── length_of_stay_distribution.png    # Length of stay plot
-│   ├── missing_values.png                 # Missing values audit plot
-│   ├── correlation_heatmap.png            # Feature correlation matrix plot
-│   ├── feature_distributions.png          # 2x2 multi-panel clinical predictors plot
-│   ├── model_comparison_barchart.png      # Grouped bar chart comparing all 3 models
-│   ├── confusion_matrices.png             # Side-by-side confusion matrices plot
-│   ├── roc_curve_comparison.png           # Multi-model ROC curves
-│   ├── pr_curve_comparison.png            # Multi-model Precision-Recall curves
-│   ├── feature_importance_rf.png          # Random Forest Gini feature importances
-│   └── model_comparison.csv               # Comparison metrics CSV
-└── README.md                              # Comprehensive project documentation
+│   ├── dataset1_analysis.ipynb        # Exploratory analysis
+│   ├── preprocessing.ipynb            # Initial cleaning
+│   ├── model_training.ipynb           # Baseline: LR, RF, XGBoost + thresholds + SMOTE check
+│   ├── improved_pipeline.ipynb        # Improved pipeline, step by step
+│   └── train_improved_pipeline.py     # Improved pipeline as a single script
+├── frontend/
+│   └── app_improved.py                # CarePredict 2.0 dashboard
+├── models/
+│   └── improved/                      # Saved models, preprocessor, thresholds (used by the dashboard)
+├── results/                           # Figures and CSV comparison tables
+├── .streamlit/config.toml             # Dashboard theme
+└── requirements.txt
 ```
+
+**Earlier prototype (kept for reference).** The repository also contains an earlier prototype built on a different, synthetic dataset (HLT-005): `data/admissions.csv`, `notebooks/pipeline.ipynb`, `notebooks/train_pipeline.py` and `frontend/app.py`. It is separate from the diabetes work above and its results are not comparable. The top level of `models/` holds a mix of artifacts from both workstreams, so use `models/improved/` for anything related to the diabetes dashboard.
 
 ---
 
-## 🚀 How to Run the Project
+## Getting started
 
-### 1. Prerequisites
-Ensure Python 3.10+ is installed with standard data science packages:
+**Requirements:** Python 3.10 or newer.
+
 ```bash
-pip install pandas numpy scikit-learn matplotlib seaborn streamlit joblib requests
+git clone <your-repo-url>
+cd Hospital-Readmission-Prediction
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-### 2. Re-train Models & Generate Visualizations (Optional)
-To execute the complete end-to-end pipeline and regenerate all models, results, and figures:
+**Run the dashboard** (uses the saved models, no training needed):
+
 ```bash
-python notebooks/train_pipeline.py
+streamlit run frontend/app_improved.py
 ```
 
-### 3. Launch the CarePredict Web Dashboard
-To start the interactive web application:
+**Retrain the improved pipeline** (regenerates `models/improved/` and the figures and CSVs in `results/`):
+
 ```bash
-streamlit run frontend/app.py
+python notebooks/train_improved_pipeline.py
 ```
-The application will open automatically at `http://localhost:8501`.
+
+**Reproduce the baseline results:** open `notebooks/model_training.ipynb` in Jupyter and run all cells. Start Jupyter from the `notebooks/` folder, because the notebook saves to `../models` and `../results`.
+
+All random seeds are fixed at 42.
 
 ---
 
-## ⚠️ Limitations of Synthetic Data
+## Limitations
 
-While synthetic healthcare datasets provide an accessible, privacy-preserving framework for machine learning development, several inherent limitations must be acknowledged:
+- **Modest discrimination.** ROC-AUC is about 0.67 for every model. The models rank patients better than chance but are not accurate enough to act on alone.
+- **Many false alarms.** Precision is below 0.20, so most flagged patients are not readmitted.
+- **Narrow, older data.** The data cover diabetic inpatients at 130 US hospitals from 1999 to 2008 and use ICD-9 coding. Performance on other populations, or on current practice, is unknown.
+- **Administrative fields only.** The data have no vital signs, lab values or social factors, which matter for readmission.
+- **No external validation.** All results come from one held-out split of one dataset. The test set was not used for tuning or threshold selection, but there is no independent dataset or prospective check.
+- **Not a clinical tool.** See the disclaimer at the top.
 
-1. **Simulated Clinical Correlations**: Synthetic generators model statistical distributions and probabilistic correlations, but they may lack rare physiological nuances and complex multi-morbid interactions found in real Electronic Health Records (EHR).
-2. **Simplified Diagnosis Hierarchy**: Real hospital billing data contains thousands of ICD-10-CM diagnosis and procedure codes with intricate temporal sequences, whereas synthetic benchmarks simplify diagnoses into coarse DRG clusters.
-3. **Unmeasured Social Determinants of Health (SDoH)**: In real healthcare environments, housing stability, caregiver support, and prescription drug affordability strongly influence 30-day readmissions. These dimensions are largely approximated or absent in synthetic benchmarks.
-4. **Generalizability**: Performance achieved on synthetic data serves as a proof-of-concept and cannot be extrapolated directly to clinical deployment without validation on prospectively collected real patient cohorts under Institutional Review Board (IRB) oversight.
+---
+
+## References and credits
+
+- B. Strack, J. P. DeShazo, C. Gennings, J. L. Olmo, S. Ventura, K. J. Cios, and J. N. Clore, "Impact of HbA1c measurement on hospital readmission rates: Analysis of 70,000 clinical database patient records," *BioMed Research International*, vol. 2014, Art. no. 781670, 2014.
+- Dataset: "Diabetes 130-US Hospitals for Years 1999–2008," UCI Machine Learning Repository.
+
+**Authors:** _add the three authors' names here_
+
+**License:** _not yet specified. Add a LICENSE file before sharing publicly._
